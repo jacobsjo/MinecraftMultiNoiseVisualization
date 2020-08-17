@@ -1,7 +1,7 @@
 Minecraft Multi-Noise Visualization
 ===================================
 
-![Vanilla Nether]([screenshots/vanilla-nether.jpg])
+![Vanilla Nether](screenshots/vanilla-nether.jpg)
 
 This program lets you quickly see how your biome distribution looks
 like. You do not need to create a world with the definition. Not
