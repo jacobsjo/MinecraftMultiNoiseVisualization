@@ -10,7 +10,7 @@ file. The only requirement is that it uses the
 ``minecraft:multi_noise`` biome-source type.
 
 ### Installation
-1. Download the zip from the releases page
+1. Download the zip from the [releases page](https://github.com/jacobsjo/MinecraftMultiNoiseVisualization/releases)
 1. Unzip the zip file
 1. Download the official **1.16.2** ``server.jar`` file from [here](https://launcher.mojang.com/v1/objects/c5f6fb23c3876461d46ec380421e42b289789530/server.jar) (note: by doing so you agree to the Minecraft EULA and privacy policy - see [here](https://www.minecraft.net/en-us/download/server/))
 1. Put the ``server.jar`` into the ``MinecraftMultiNoiseVisualization`` you have just extracted
