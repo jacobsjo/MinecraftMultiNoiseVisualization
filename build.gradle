@@ -1,0 +1,88 @@
+import proguard.gradle.ProGuardTask
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.sf.proguard', name: 'proguard-gradle', version: '6.2.2'
+    }
+}
+
+plugins {
+    id 'java'
+}
+
+group 'eu.jacobso.multinoisevis'
+version '0.1'
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://dl.bintray.com/lxgaming/maven'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+}
+
+dependencies {
+    compile group: 'org.json', name: 'json', version: '20200518', ext: 'jar'
+    compile group: 'commons-io', name: 'commons-io', version: '2.7', ext: 'jar'
+    compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.4.1', ext: 'jar'
+    compile group: 'com.google.guava', name: 'guava', version: '29.0-jre', ext: 'jar'
+    compileOnly files('minecraft-server-jars/server-deobf.jar')
+    runtime files('minecraft-server-jars/server.jar')
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'eu.jacobsjo.multinoisevis.Main',
+                "Class-Path": configurations.runtime.collect { it.getName() }.join(' ')
+        )
+    }
+}
+
+task prodJar(type: ProGuardTask) {
+    dependsOn jar
+    injars jar.archivePath
+    outjars buildDir.getPath() + '/prod/MinecraftMultiNoiseVisualization/MinecraftMultiNoiseVisualization-' + project.version + '.jar'
+    libraryjars(configurations.compile + configurations.compileOnly + files('/usr/lib/jvm/java-8-openjdk/jre/lib/rt.jar'))
+    applymapping 'minecraft-server-jars/server.txt'
+    keep 'class *'
+    keep 'class eu.jacobsjo.multinoisevis.Main{ public static void main(java.lang.String[]); }'
+    keeppackagenames()
+    keepnames 'class * {*;}'
+    keepattributes()
+    dontoptimize()
+    dontshrink()
+}
+
+task copyLibs(type: Copy) {
+    from configurations.compile
+    into "$buildDir/prod/MinecraftMultiNoiseVisualization"
+}
+
+task copyConfig(type: Copy) {
+    from "biome_colors.json"
+    into "$buildDir/prod/MinecraftMultiNoiseVisualization"
+}
+
+task zipProd (type: Zip){
+    dependsOn (
+            prodJar,
+            copyLibs,
+            copyConfig
+    )
+
+    archiveFileName = "MinecraftMultiNoiseVisualization-" + project.version + ".zip"
+    destinationDirectory = file("$buildDir")
+
+    from "$buildDir/prod"
+}
