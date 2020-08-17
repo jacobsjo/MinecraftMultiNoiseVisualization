@@ -36,7 +36,7 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.7', ext: 'jar'
     compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.4.1', ext: 'jar'
     compile group: 'com.google.guava', name: 'guava', version: '29.0-jre', ext: 'jar'
-    compileOnly files('minecraft-server-jars/server-deobf.jar')
+    compile files('minecraft-server-jars/server-deobf.jar')
     runtime files('minecraft-server-jars/server.jar')
 }
 
