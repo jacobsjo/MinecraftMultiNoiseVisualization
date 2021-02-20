@@ -53,7 +53,7 @@ task prodJar(type: ProGuardTask) {
     dependsOn jar
     injars jar.archivePath
     outjars buildDir.getPath() + '/prod/MinecraftMultiNoiseVisualization/MinecraftMultiNoiseVisualization-' + project.version + '.jar'
-    libraryjars(configurations.compile + configurations.compileOnly + files('/usr/lib/jvm/java-8-openjdk/jre/lib/rt.jar'))
+    libraryjars(configurations.compile + configurations.compileOnly + files("${System.getProperty('java.home')}/lib/rt.jar"))
     applymapping 'minecraft-server-jars/server.txt'
     keep 'class *'
     keep 'class eu.jacobsjo.multinoisevis.Main{ public static void main(java.lang.String[]); }'
