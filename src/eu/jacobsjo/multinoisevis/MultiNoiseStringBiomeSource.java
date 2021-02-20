@@ -134,7 +134,7 @@ public class MultiNoiseStringBiomeSource {
         JSONArray amplitudes = obj.getJSONArray("amplitudes");
         ArrayList<Double> amp = new ArrayList<>();
         for (Object a : amplitudes){
-            amp.add((Double) a);
+            amp.add(((Number) a).doubleValue());
         }
 
         int firstOctave = obj.getInt("firstOctave");
