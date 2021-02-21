@@ -52,7 +52,7 @@ such that you can call as soon as you created the world.
 - Clone this repository
 - inside the repository create a folder called ``minecraft-server-jars``
 - Download the official **1.16.2** ``server.jar`` file from [here](https://launcher.mojang.com/v1/objects/c5f6fb23c3876461d46ec380421e42b289789530/server.jar) and put it inside that folder (note: by doing so you agree to the Minecraft EULA and privacy policy - see [here](https://www.minecraft.net/en-us/download/server/))
-- Download the official **1.16.2** server mappings ``server.txt`` file from [here](TODO) and also put it in the ``minecraft-server-jar`` folder.
+- Download the official **1.16.2** server mappings ``server.txt`` file from [here](https://launcher.mojang.com/v1/objects/40337a76c8486473e5990f7bb44b13bc08b69e7a/server.txt) and also put it in the ``minecraft-server-jar`` folder.
 - Use [Reconstruct](https://github.com/LXGaming/Reconstruct) to deobfuscate the ``server.jar`` into ``server-deobf.jar`` using the following command: 
 ```
 java -jar Reconstruct-1.1.0.jar -jar server.jar -mapping server.txt -output server-deobf.jar -exclude org.apache -exclude joptsimple -exclude it.unimi.dsi -exclude com.mojang -exclude com.google -exclude io.netty -exclude javax.annotation
