@@ -14,7 +14,7 @@ plugins {
 }
 
 group 'eu.jacobso.multinoisevis'
-version '0.1'
+version '0.1.1'
 
 repositories {
     mavenCentral()
@@ -65,7 +65,9 @@ task prodJar(type: ProGuardTask) {
 }
 
 task copyLibs(type: Copy) {
-    from configurations.compile
+    from configurations.compile{
+        exclude 'server-deobf.jar'
+    }
     into "$buildDir/prod/MinecraftMultiNoiseVisualization"
 }
 

@@ -21,6 +21,8 @@ minecraft-server-jars
 .idea/**/dictionaries
 .idea/**/shelf
 
+.idea/modules
+
 # Generated files
 .idea/**/contentModel.xml
 
