@@ -1,6 +1,7 @@
 package eu.jacobsjo.multinoisevis;
 
-import com.mojang.datafixers.util.Pair;
+import net.minecraft.world.level.biome.Climate;
+import net.minecraft.world.level.biome.MultiNoiseBiomeResourceSource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,8 +14,9 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     enum Parameter {
         TEMPERATURE("Temperature"),
         HUMIDITY("Humidity"),
-        ALTITUDE("Altitude"),
-        WEIRDNESS("Weirdness");
+        WEIRDNESS("Weirdness"),
+        CONTINENTALNESS("Continentalness"),
+        EROSION("Erosion");
 
         private String name;
         Parameter(String name){
@@ -28,7 +30,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     }
 
 
-    public MultiNoiseStringBiomeSource biomeSource;
+    public MultiNoiseBiomeResourceSource biomeSource;
     private float offsetX = 0;
     private float offsetZ = 0;
     private final int movementDownsample = 8;
@@ -60,7 +62,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     private Parameter voronoi1 = Parameter.TEMPERATURE;
     private Parameter voronoi2 = Parameter.HUMIDITY;
 
-    public MapPanel(MultiNoiseStringBiomeSource biomeSource, BiomeColors biomeColors){
+    public MapPanel(MultiNoiseBiomeResourceSource biomeSource, BiomeColors biomeColors){
 
         timer = new Timer(500, actionEvent -> {
             downsample = stationaryDownsample;
@@ -114,14 +116,14 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     }
 
     public String getTeleportCommand(){
-        if (biomeSource.getWorldname().equals(""))
+        //if (biomeSource.getWorldname().equals(""))
             return "/tp @s " + mouseX + " ~ " + mouseY;
-        else
-            return "/execute in " + biomeSource.getWorldname() + " run tp @s " + (mouseX*4) + " ~ " + (mouseY*4);
+        //else
+        //    return "/execute in " + biomeSource.getWorldname() + " run tp @s " + (mouseX*4) + " ~ " + (mouseY*4);
     }
 
     public String getBiomeAtMouse(){
-        return biomeSource.getBiome(mouseX, 0, mouseY);
+        return biomeSource.getNoiseBiome(mouseX, 0, mouseY);
     }
 
     public void setHightlightBiome(String hightlightBiome){
@@ -141,7 +143,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
             return;
 
         redrawThread = new Thread(() -> {
-            MultiNoiseStringBiomeSource bs = biomeSource;
+            MultiNoiseBiomeResourceSource bs = biomeSource;
             BiomeColors bc = biomeColors;
             int ds = downsample;
             float s = scaling;
@@ -154,7 +156,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
             BufferedImage newImage = new BufferedImage(w / ds, h /ds, BufferedImage.TYPE_INT_RGB);
             for (int x = 0 ; x<w/ds ; x++){
                 for (int z = 0; z<h/ds ; z++) {
-                    String biome = bs.getBiome(
+                    String biome = bs.getNoiseBiome(
                             (int) (x * ds * s) + (int) ox,
                             0,
                             (int) (z * ds * s) + (int) oz
@@ -188,7 +190,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
             int vds = 1;
             Parameter v1 = voronoi1;
             Parameter v2 = voronoi2;
-            MultiNoiseStringBiomeSource bs = biomeSource;
+            MultiNoiseBiomeResourceSource bs = biomeSource;
             BiomeColors bc = biomeColors;
             String hb = hightlightBiome;
             int mx = mouseX;
@@ -200,12 +202,13 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
                     float param1 = ((float) p1 / vs * vds * 4.0f) - 2.0f;
                     float param2 = ((float) p2 / vs * vds * 4.0f) - 2.0f;
 
-                    float temp = v1 == Parameter.TEMPERATURE ? param1 : v2 == Parameter.TEMPERATURE ? param2 : biomeSource.getTemperature(mx, 0, my);
-                    float humid = v1 == Parameter.HUMIDITY ? param1 : v2 == Parameter.HUMIDITY ? param2 : biomeSource.getHumidity(mx, 0, my);
-                    float alt = v1 == Parameter.ALTITUDE ? param1 : v2 == Parameter.ALTITUDE ? param2 : biomeSource.getAltitude(mx, 0, my);
-                    float weird = v1 == Parameter.WEIRDNESS ? param1 : v2 == Parameter.WEIRDNESS ? param2 : biomeSource.getWeirdness(mx, 0, my);
+                    double temp = v1 == Parameter.TEMPERATURE ? param1 : v2 == Parameter.TEMPERATURE ? param2 : biomeSource.getTemperature(mx, 0, my);
+                    double humid = v1 == Parameter.HUMIDITY ? param1 : v2 == Parameter.HUMIDITY ? param2 : biomeSource.getHumidity(mx, 0, my);
+                    double cont = v1 == Parameter.CONTINENTALNESS ? param1 : v2 == Parameter.CONTINENTALNESS ? param2 : biomeSource.getContinentalness(mx, 0, my);
+                    double ero = v1 == Parameter.EROSION ? param1 : v2 == Parameter.EROSION ? param2 : biomeSource.getErosion(mx, 0, my);
+                    double weird = v1 == Parameter.WEIRDNESS ? param1 : v2 == Parameter.WEIRDNESS ? param2 : biomeSource.getWeirdness(mx, 0, my);
 
-                    String biome = bs.getBiome(temp, humid, alt, weird);
+                    String biome = bs.findBiome(Climate.target((float) temp, (float) humid, (float) cont, (float) ero, 0.0f, (float) weird));
                     int color = bc.getBiomeRGB(biome, (biome.equals(hb) && (((p1 * vds) + (p2 * vds)) >> 2 & 4) == 0));
                     newVoronoiImage.setRGB(p1, p2, color);
                 }
@@ -230,7 +233,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
 
         Graphics2D g2 = (Graphics2D) g.create();
 
-        Pair<String, ClimateParametersProxy> biome = biomeSource.getBiomeAndParameters(mouseX, 0, mouseY);
+        String biome = biomeSource.getNoiseBiome(mouseX, 0, mouseY);
 
         int vs = Math.min(getWidth(),getHeight()) / 3;
 
@@ -256,13 +259,14 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         g2.drawString(voronoi2.toString(), -vs+ 50, getWidth() - vs - 5);
         g2.rotate(Math.PI/2);
 
-        float temp = biomeSource.getTemperature(mouseX, 0, mouseY);
-        float humid = biomeSource.getHumidity(mouseX, 0, mouseY);
-        float alt = biomeSource.getAltitude(mouseX, 0, mouseY);
-        float weird = biomeSource.getWeirdness(mouseX, 0, mouseY);
+        double temp = biomeSource.getTemperature(mouseX, 0, mouseY);
+        double humid = biomeSource.getHumidity(mouseX, 0, mouseY);
+        double cont = biomeSource.getContinentalness(mouseX, 0, mouseY);
+        double ero = biomeSource.getErosion(mouseX, 0, mouseY);
+        double weird = biomeSource.getWeirdness(mouseX, 0, mouseY);
 
-        double pointer1 = voronoi1 == Parameter.TEMPERATURE ? temp : voronoi1 == Parameter.HUMIDITY ? humid : voronoi1 == Parameter.ALTITUDE ? alt : weird;
-        double pointer2 = voronoi2 == Parameter.TEMPERATURE ? temp : voronoi2 == Parameter.HUMIDITY ? humid : voronoi2 == Parameter.ALTITUDE ? alt : weird;
+        double pointer1 = voronoi1 == Parameter.TEMPERATURE ? temp : voronoi1 == Parameter.HUMIDITY ? humid : voronoi1 == Parameter.CONTINENTALNESS ? cont : voronoi1 == Parameter.EROSION ? ero : weird;
+        double pointer2 = voronoi2 == Parameter.TEMPERATURE ? temp : voronoi2 == Parameter.HUMIDITY ? humid : voronoi2 == Parameter.CONTINENTALNESS ? cont : voronoi2 == Parameter.EROSION ? ero : weird;
         pointer1 = Math.min(2.0, Math.max(pointer1, -2.0));
         pointer2 = Math.min(2.0, Math.max(pointer2, -2.0));
 
@@ -283,12 +287,12 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         g2.setColor(Color.WHITE);
 
         g2.drawString("X: " + (mouseX * 4) + "| Z: " + (mouseY*4), 5, 15);
-        g2.drawString(biome.getFirst(), 5, 30);
-        g2.drawString(String.format("Temperature: % .2f / % .2f", biome.getSecond().getTemperature(), temp), 5, 45);
+        g2.drawString(biome, 5, 30);
+/*        g2.drawString(String.format("Temperature: % .2f / % .2f", biome.getSecond().getTemperature(), temp), 5, 45);
         g2.drawString(String.format("Humidity:    % .2f / % .2f", biome.getSecond().getHumidity(), humid), 5, 60);
         g2.drawString(String.format("Altitude:    % .2f / % .2f", biome.getSecond().getAltitude(), alt), 5, 75);
         g2.drawString(String.format("Weirdness:   % .2f / % .2f", biome.getSecond().getWeirdness(), weird), 5, 90);
-        g2.drawString(String.format("Offset:      % .2f /  0.00", biome.getSecond().getOffset()), 5, 105);
+        g2.drawString(String.format("Offset:      % .2f /  0.00", biome.getSecond().getOffset()), 5, 105);*/
 
 
         g2.drawString("" + (scaleLingLenght * 4) + " Blocks", 12, getHeight()-26);

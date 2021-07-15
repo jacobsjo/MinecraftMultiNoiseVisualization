@@ -5,6 +5,7 @@
 
 package eu.jacobsjo.multinoisevis;
 
+/*
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
@@ -181,3 +182,4 @@ public class MultiNoiseStringBiomeSource {
         return (float) weirdnessNoise.getValue(x, y, z);
     }
 }
+*/

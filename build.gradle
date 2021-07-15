@@ -5,7 +5,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.sf.proguard', name: 'proguard-gradle', version: '6.2.2'
+        classpath group: 'com.guardsquare', name: 'proguard-gradle', version: '7.1.0'
     }
 }
 
@@ -14,7 +14,7 @@ plugins {
 }
 
 group 'eu.jacobso.multinoisevis'
-version '0.1.1'
+version '0.2.0.a'
 
 repositories {
     mavenCentral()
@@ -32,19 +32,19 @@ sourceSets {
 }
 
 dependencies {
-    compile group: 'org.json', name: 'json', version: '20200518', ext: 'jar'
-    compile group: 'commons-io', name: 'commons-io', version: '2.7', ext: 'jar'
-    compile group: 'it.unimi.dsi', name: 'fastutil', version: '8.4.1', ext: 'jar'
-    compile group: 'com.google.guava', name: 'guava', version: '29.0-jre', ext: 'jar'
-    compile files('minecraft-server-jars/server-deobf.jar')
-    runtime files('minecraft-server-jars/server.jar')
+    implementation group: 'org.json', name: 'json', version: '20200518', ext: 'jar'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.5', ext: 'jar'
+    implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.2.1', ext: 'jar'
+    implementation group: 'com.google.guava', name: 'guava', version: '21.0', ext: 'jar'
+    implementation files('minecraft-server-jars/server-deobf.jar')
+    runtimeOnly files('minecraft-server-jars/server.jar')
 }
 
 jar {
     manifest {
         attributes(
                 'Main-Class': 'eu.jacobsjo.multinoisevis.Main',
-                "Class-Path": configurations.runtime.collect { it.getName() }.join(' ')
+                "Class-Path": configurations.runtimeClasspath.collect { it.getName() }.join(' ')
         )
     }
 }
@@ -53,7 +53,7 @@ task prodJar(type: ProGuardTask) {
     dependsOn jar
     injars jar.archivePath
     outjars buildDir.getPath() + '/prod/MinecraftMultiNoiseVisualization/MinecraftMultiNoiseVisualization-' + project.version + '.jar'
-    libraryjars(configurations.compile + configurations.compileOnly + files("${System.getProperty('java.home')}/lib/rt.jar"))
+    libraryjars(configurations.compileClasspath + files("${System.getProperty('java.home')}/jmods/"))
     applymapping 'minecraft-server-jars/server.txt'
     keep 'class *'
     keep 'class eu.jacobsjo.multinoisevis.Main{ public static void main(java.lang.String[]); }'
@@ -65,7 +65,7 @@ task prodJar(type: ProGuardTask) {
 }
 
 task copyLibs(type: Copy) {
-    from configurations.compile{
+    from configurations.compileClasspath{
         exclude 'server-deobf.jar'
     }
     into "$buildDir/prod/MinecraftMultiNoiseVisualization"

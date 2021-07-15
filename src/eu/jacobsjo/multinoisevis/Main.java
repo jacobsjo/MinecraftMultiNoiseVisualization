@@ -1,5 +1,8 @@
 package eu.jacobsjo.multinoisevis;
 
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.world.level.biome.MultiNoiseBiomeResourceSource;
 import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -21,9 +24,15 @@ public class Main {
 
     private static String lastPath = "";
 
+    private static long seed;
+    private static boolean fixedSeed = false;
+
     public static void main(String[] args) {
-        long seed = System.currentTimeMillis();
-        MultiNoiseStringBiomeSource biomeSource = MultiNoiseStringBiomeSource.defaultNether(seed);
+        SharedConstants.setVersion(new DummyVersion());
+        Bootstrap.bootStrap();
+
+        seed = System.currentTimeMillis();
+        MultiNoiseBiomeResourceSource biomeSource = MultiNoiseBiomeResourceSource.overworld(seed);
 
         JFrame frame = new JFrame("Minecraft Multinoise Visualization");
         frame.setSize(1000, 1000);
@@ -83,11 +92,11 @@ public class Main {
 
                 try {
                     try {
-                        mapPanel.biomeSource = loadJson(mapPanel.biomeSource.getSeed(), lastPath);
+                        mapPanel.biomeSource = loadJson(seed, lastPath);
                         mapPanel.redrawImage();
                         eOpenNether.setEnabled(true);
-                        eSetSeed.setEnabled(!mapPanel.biomeSource.isFixedSeed());
-                        eRandomSeed.setEnabled(!mapPanel.biomeSource.isFixedSeed());
+                        eSetSeed.setEnabled(!fixedSeed);
+                        eRandomSeed.setEnabled(!fixedSeed);
                     } catch (OperationNotSupportedException e) {
                         JOptionPane.showMessageDialog(null, "Opended dimension is not of type minecraft:multi_noise", "Could not open file", JOptionPane.ERROR_MESSAGE);
                     } catch (JSONException e) {
@@ -110,7 +119,7 @@ public class Main {
                             public void onFileDelete(File file) {
                                 try {
                                     if (file.getCanonicalPath().equals(lastPath)) {
-                                        loadVoid(mapPanel);
+                                        //loadVoid(mapPanel);
                                         mapPanel.redrawImage();
                                     }
                                 } catch (IOException e) {
@@ -143,7 +152,7 @@ public class Main {
 
 
         eOpenNether.addActionListener(actionEvent -> {
-            mapPanel.biomeSource = MultiNoiseStringBiomeSource.defaultNether(mapPanel.biomeSource.getSeed());
+            mapPanel.biomeSource = MultiNoiseBiomeResourceSource.overworld(seed);
             mapPanel.redrawImage();
             eOpenNether.setEnabled(false);
             eSetSeed.setEnabled(true);
@@ -159,20 +168,20 @@ public class Main {
         contextMenu.add(eOpenNether);
 
         eSetSeed.addActionListener(actionEvent -> {
-            String s = (String) JOptionPane.showInputDialog(frame, "Set seed: ", "Seed", JOptionPane.PLAIN_MESSAGE, null, null, mapPanel.biomeSource.getSeed());
+            String s = (String) JOptionPane.showInputDialog(frame, "Set seed: ", "Seed", JOptionPane.PLAIN_MESSAGE, null, null, seed);
             long ss;
             try {
                 ss = Long.parseLong(s);
             } catch (NumberFormatException e) {
                 ss = (long) s.hashCode();
             }
-            mapPanel.biomeSource = mapPanel.biomeSource.withSeed(ss);
+         //   mapPanel.biomeSource = mapPanel.biomeSource.withSeed(ss);
             mapPanel.redrawImage();
         });
         contextMenu.add(eSetSeed);
 
         eRandomSeed.addActionListener(actionEvent -> {
-            mapPanel.biomeSource = mapPanel.biomeSource.withSeed(System.currentTimeMillis());
+          //  mapPanel.biomeSource = mapPanel.biomeSource.withSeed(System.currentTimeMillis());
             mapPanel.redrawImage();
         });
         contextMenu.add(eRandomSeed);
@@ -187,6 +196,7 @@ public class Main {
 
         JMenu eOpenVoronoi = new JMenu("Set Voronoi Diagram");
 
+        /*
         JMenuItem eOpenVoronoi_temp_humid = new JMenuItem("Temperature / Humidity");
         eOpenVoronoi_temp_humid.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.TEMPERATURE, MapPanel.Parameter.HUMIDITY));
         JMenuItem eOpenVoronoi_temp_alt = new JMenuItem("Temperature / Altitude");
@@ -205,14 +215,14 @@ public class Main {
         eOpenVoronoi.add(eOpenVoronoi_temp_weird);
         eOpenVoronoi.add(eOpenVoronoi_humid_alt);
         eOpenVoronoi.add(eOpenVoronoi_humid_weird);
-        eOpenVoronoi.add(eOpenVoronoi_alt_weird);
+        eOpenVoronoi.add(eOpenVoronoi_alt_weird);*/
 
         contextMenu.add(eOpenVoronoi);
 
         return contextMenu;
     }
 
-    private static MultiNoiseStringBiomeSource loadJson(long seed, String path) throws OperationNotSupportedException, JSONException, FileNotFoundException {
+    private static MultiNoiseBiomeResourceSource loadJson(long seed, String path) throws OperationNotSupportedException, JSONException, FileNotFoundException {
         String json = null;
         File file = new File(path);
 
@@ -226,32 +236,33 @@ public class Main {
         }
 
         json = new Scanner(file).useDelimiter("\\Z").next();
-        return MultiNoiseStringBiomeSource.readJson(seed, json, worldname);
+        return MultiNoiseBiomeResourceSource.overworld(seed);// .readJson(seed, json, worldname);
     }
 
     private static void reload(MapPanel mapPanel){
         System.out.println("Reload!");
         try {
-            MultiNoiseStringBiomeSource biomeSource = loadJson(mapPanel.biomeSource.getSeed(), lastPath);
+            MultiNoiseBiomeResourceSource biomeSource = loadJson(seed, lastPath);
             mapPanel.biomeSource = biomeSource;
         } catch (OperationNotSupportedException e) {
             System.out.println("ERROR: Opended dimension is not of type minecraft:multi_noise");
-            loadVoid(mapPanel);
+            //loadVoid(mapPanel);
         } catch (JSONException e) {
             System.out.println("ERROR: JSON format not correct");
             e.printStackTrace();
-            loadVoid(mapPanel);
+            //loadVoid(mapPanel);
         } catch (FileNotFoundException e) {
             System.out.println("ERROR: Failed to open file");
             e.printStackTrace();
-            loadVoid(mapPanel);
+            //loadVoid(mapPanel);
         }
 
         mapPanel.redrawImage();
     }
 
+    /*
     private static void loadVoid(MapPanel mapPanel){
         mapPanel.biomeSource = MultiNoiseStringBiomeSource.voidSource();
-    }
+    }*/
 }
 
