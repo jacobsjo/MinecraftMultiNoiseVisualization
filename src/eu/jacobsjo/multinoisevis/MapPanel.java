@@ -21,7 +21,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         EROSION("Erosion"),
         DEPTH("Depth");
 
-        private String name;
+        private final String name;
         Parameter(String name){
             this.name = name;
         }
@@ -60,7 +60,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     private BufferedImage voronoiImage;
     Lock imageLock = new ReentrantLock();
     Lock voronoiImageLock = new ReentrantLock();
-    private BiomeColors biomeColors;
+    private final BiomeColors biomeColors;
 
     private Thread redrawThread;
     private Thread voronoiRedrawThread;
@@ -75,36 +75,26 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         addMouseWheelListener(this);
         addComponentListener(this);
 
-        //this.width = width;
-        //this.height = height;
         this.biomeSource = biomeSource;
         this.biomeColors = biomeColors;
         redrawImage();
         sceduleRedraw();
     }
 
-        public void sceduleRedraw(){
-            if (timer != null)
-                timer.cancel();
-            timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    downsample = stationaryDownsample;
-                    doHillshade = true;
-                    redrawImage();
-                }
-            }, 500);
-        }
+    public void sceduleRedraw(){
+        if (timer != null)
+            timer.cancel();
+        timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                downsample = stationaryDownsample;
+                doHillshade = true;
+                redrawImage();
+            }
+        }, 500);
+    }
 
-/*    @Override
-    public void mousePressed(MouseEvent e) {
-        if (panel.contains(e.getPoint())) {
-            dX = e.getLocationOnScreen().x - panel.getX();
-            dY = e.getLocationOnScreen().y - panel.getY();
-            panel.setDraggable(true);
-        }
-    }*/
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -175,7 +165,6 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
 
         redrawThread = new Thread(() -> {
             BiomeResourceSource bs = biomeSource;
-            BiomeColors bc = biomeColors;
             int ds = downsample;
             boolean hs = doHillshade && isHillshadeEnabled;
             float s = scaling;
@@ -197,7 +186,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
                             (int) (x * ds * s) + (int) ox,
                             (int) (z * ds * s) + (int) oz
                     ).getFirst();
-                    int color = bc.getBiomeRGB(biome, (biome.equals(hb) && (((x * ds) + (int) (ox/s) + (z * ds) + (int) (oz/s)) >> 2 & 4) == 0), 25*hillshade);
+                    int color = biomeColors.getBiomeRGB(biome, (biome.equals(hb) && (((x * ds) + (int) (ox/s) + (z * ds) + (int) (oz/s)) >> 2 & 4) == 0), 25*hillshade);
 
 
                     newImage.setRGB(x, z, color);
@@ -245,7 +234,6 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
             Parameter v1 = voronoi1;
             Parameter v2 = voronoi2;
             BiomeResourceSource bs = biomeSource;
-            BiomeColors bc = biomeColors;
             String hb = hightlightBiome;
             int mx = mouseX;
             int my = mouseY;
@@ -268,7 +256,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
                     double darken = 1.0 - offsetAndFactor[0]*1;
 
                     String biome = bs.findBiome(target).getFirst();
-                    int color = bc.getBiomeRGB(biome, (biome.equals(hb) && (((p1 * vds) + (p2 * vds)) >> 2 & 4) == 0), darken);
+                    int color = biomeColors.getBiomeRGB(biome, (biome.equals(hb) && (((p1 * vds) + (p2 * vds)) >> 2 & 4) == 0), darken);
                     newVoronoiImage.setRGB(p1, p2, color);
                 }
             }
@@ -351,12 +339,12 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
 
         g2.drawString("X: " + (mouseX * 4) + "| Y: " + terrainHeight + "| Z: " + (mouseY*4), 5, 15);
         g2.drawString(biome, 5, 30);
-        g2.drawString(String.format("Temperature:     %13s / % .2f", biomeParams.temperature().toString(), temp), 5, 45);
-        g2.drawString(String.format("Humidity:        %13s / % .2f", biomeParams.humidity().toString(), humid), 5, 60);
-        g2.drawString(String.format("Continentalness: %13s / % .2f", biomeParams.continentalness().toString(), cont), 5, 75);
-        g2.drawString(String.format("Erosion:         %13s / % .2f", biomeParams.erosion().toString(), ero), 5, 90);
-        g2.drawString(String.format("Weirdness:       %13s / % .2f", biomeParams.weirdness().toString(), weird), 5, 105);
-        g2.drawString(String.format("Depth:           %13s /  0.00", biomeParams.depth().toString()), 5, 120);
+        g2.drawString(String.format("Temperature:     %13s / % .2f", biomeParams.temperature(), temp), 5, 45);
+        g2.drawString(String.format("Humidity:        %13s / % .2f", biomeParams.humidity(), humid), 5, 60);
+        g2.drawString(String.format("Continentalness: %13s / % .2f", biomeParams.continentalness(), cont), 5, 75);
+        g2.drawString(String.format("Erosion:         %13s / % .2f", biomeParams.erosion(), ero), 5, 90);
+        g2.drawString(String.format("Weirdness:       %13s / % .2f", biomeParams.weirdness(), weird), 5, 105);
+        g2.drawString(String.format("Depth:           %13s /  0.00", biomeParams.depth()), 5, 120);
         g2.drawString(String.format("Offset:                % .4f /  0.00", biomeParams.offset()), 5, 135);
 
 
@@ -430,7 +418,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         offsetX = (offsetX + e.getX() * scaling);
         offsetZ = (offsetZ + e.getY() * scaling);
 
-        scaling *=  Math.exp(e.getWheelRotation() * 0.1f);;
+        scaling *=  Math.exp(e.getWheelRotation() * 0.1f);
         scaling = (float) Math.min(10, Math.max(0.02, scaling));
 
         offsetX = (offsetX - e.getX() * scaling);
