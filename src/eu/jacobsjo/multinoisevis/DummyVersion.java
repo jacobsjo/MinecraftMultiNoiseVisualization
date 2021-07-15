@@ -8,7 +8,7 @@ import java.util.Date;
 public class DummyVersion implements WorldVersion {
     @Override
     public DataVersion getDataVersion() {
-        return new DataVersion(0, "dummy");
+        return new DataVersion(999999, "dummy");
     }
 
     @Override
@@ -28,7 +28,7 @@ public class DummyVersion implements WorldVersion {
 
     @Override
     public int getProtocolVersion() {
-        return 0;
+        return 999999;
     }
 
     @Override

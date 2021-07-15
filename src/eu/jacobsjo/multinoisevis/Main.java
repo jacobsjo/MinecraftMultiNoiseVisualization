@@ -2,7 +2,6 @@ package eu.jacobsjo.multinoisevis;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
-import net.minecraft.world.level.biome.MultiNoiseBiomeResourceSource;
 import org.apache.commons.io.monitor.FileAlterationListener;
 import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
 import org.apache.commons.io.monitor.FileAlterationMonitor;
@@ -18,21 +17,23 @@ import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class Main {
 
     private static String lastPath = "";
 
-    private static long seed;
-    private static boolean fixedSeed = false;
+    private static Dimension dimension;
 
     public static void main(String[] args) {
         SharedConstants.setVersion(new DummyVersion());
         Bootstrap.bootStrap();
 
-        seed = System.currentTimeMillis();
-        MultiNoiseBiomeResourceSource biomeSource = MultiNoiseBiomeResourceSource.overworld(seed);
+        dimension = Dimension.getInstance();
+
+        dimension.seed = System.currentTimeMillis();
+        MultiNoiseBiomeResourceSource biomeSource = MultiNoiseBiomeResourceSource.overworld(dimension.seed);
 
         JFrame frame = new JFrame("Minecraft Multinoise Visualization");
         frame.setSize(1000, 1000);
@@ -71,6 +72,7 @@ public class Main {
         }
 
         JMenuItem eOpen = new JMenuItem("Open Dimension json");
+        JMenuItem eOpenOverworld = new JMenuItem("Open Vanilla Overworld");
         JMenuItem eOpenNether = new JMenuItem("Open Vanilla Nether");
         JMenuItem eSetSeed = new JMenuItem("Set seed");
         JMenuItem eRandomSeed = new JMenuItem("Random seed");
@@ -92,11 +94,12 @@ public class Main {
 
                 try {
                     try {
-                        mapPanel.biomeSource = loadJson(seed, lastPath);
+                        mapPanel.biomeSource = loadJson(lastPath);
                         mapPanel.redrawImage();
                         eOpenNether.setEnabled(true);
-                        eSetSeed.setEnabled(!fixedSeed);
-                        eRandomSeed.setEnabled(!fixedSeed);
+                        eOpenOverworld.setEnabled(true);
+                        eSetSeed.setEnabled(!dimension.fixedSeed);
+                        eRandomSeed.setEnabled(!dimension.fixedSeed);
                     } catch (OperationNotSupportedException e) {
                         JOptionPane.showMessageDialog(null, "Opended dimension is not of type minecraft:multi_noise", "Could not open file", JOptionPane.ERROR_MESSAGE);
                     } catch (JSONException e) {
@@ -119,7 +122,7 @@ public class Main {
                             public void onFileDelete(File file) {
                                 try {
                                     if (file.getCanonicalPath().equals(lastPath)) {
-                                        //loadVoid(mapPanel);
+                                        loadVoid(mapPanel);
                                         mapPanel.redrawImage();
                                     }
                                 } catch (IOException e) {
@@ -150,10 +153,31 @@ public class Main {
         });
         contextMenu.add(eOpen);
 
+        eOpenOverworld.addActionListener(actionEvent -> {
+            mapPanel.biomeSource = MultiNoiseBiomeResourceSource.overworld(dimension.seed);
+            mapPanel.redrawImage();
+            dimension.name = "minecraft:overworld";
+            dimension.fixedSeed = false;
+            eOpenOverworld.setEnabled(false);
+            eOpenNether.setEnabled(true);
+            eSetSeed.setEnabled(true);
+            eRandomSeed.setEnabled(true);
+            try {
+                monitor.stop();
+                monitor.getObservers().forEach(monitor::removeObserver);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        eOpenOverworld.setEnabled(false);
+        contextMenu.add(eOpenOverworld);
 
         eOpenNether.addActionListener(actionEvent -> {
-            mapPanel.biomeSource = MultiNoiseBiomeResourceSource.overworld(seed);
+            mapPanel.biomeSource = MultiNoiseBiomeResourceSource.nether(dimension.seed);
             mapPanel.redrawImage();
+            dimension.name = "minecraft:the_nether";
+            dimension.fixedSeed = false;
+            eOpenOverworld.setEnabled(true);
             eOpenNether.setEnabled(false);
             eSetSeed.setEnabled(true);
             eRandomSeed.setEnabled(true);
@@ -164,24 +188,26 @@ public class Main {
                 e.printStackTrace();
             }
         });
-        eOpenNether.setEnabled(false);
+        eOpenNether.setEnabled(true);
         contextMenu.add(eOpenNether);
 
         eSetSeed.addActionListener(actionEvent -> {
-            String s = (String) JOptionPane.showInputDialog(frame, "Set seed: ", "Seed", JOptionPane.PLAIN_MESSAGE, null, null, seed);
+            String s = (String) JOptionPane.showInputDialog(frame, "Set seed: ", "Seed", JOptionPane.PLAIN_MESSAGE, null, null, dimension.seed);
             long ss;
             try {
                 ss = Long.parseLong(s);
             } catch (NumberFormatException e) {
-                ss = (long) s.hashCode();
+                ss = s.hashCode();
             }
-         //   mapPanel.biomeSource = mapPanel.biomeSource.withSeed(ss);
+            dimension.seed = ss;
+            mapPanel.biomeSource = mapPanel.biomeSource.withSeed(ss);
             mapPanel.redrawImage();
         });
         contextMenu.add(eSetSeed);
 
         eRandomSeed.addActionListener(actionEvent -> {
-          //  mapPanel.biomeSource = mapPanel.biomeSource.withSeed(System.currentTimeMillis());
+            dimension.seed = System.currentTimeMillis();
+            mapPanel.biomeSource = mapPanel.biomeSource.withSeed(dimension.seed);
             mapPanel.redrawImage();
         });
         contextMenu.add(eRandomSeed);
@@ -194,36 +220,61 @@ public class Main {
         });
         contextMenu.add(eHighlightBiome);
 
-        JMenu eOpenVoronoi = new JMenu("Set Voronoi Diagram");
+        JMenuItem eToggleHillshade = new JMenuItem("Toggle Hillshading");
+        eToggleHillshade.addActionListener(actionEvent -> {
+            mapPanel.toggleHillshadeEnabled();;
+            mapPanel.redrawImage();
+            mapPanel.sceduleRedraw();
+        });
+        contextMenu.add(eToggleHillshade);
 
-        /*
-        JMenuItem eOpenVoronoi_temp_humid = new JMenuItem("Temperature / Humidity");
-        eOpenVoronoi_temp_humid.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.TEMPERATURE, MapPanel.Parameter.HUMIDITY));
-        JMenuItem eOpenVoronoi_temp_alt = new JMenuItem("Temperature / Altitude");
-        eOpenVoronoi_temp_alt.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.TEMPERATURE, MapPanel.Parameter.ALTITUDE));
-        JMenuItem eOpenVoronoi_temp_weird = new JMenuItem("Temperature / Weirdness");
-        eOpenVoronoi_temp_weird.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.TEMPERATURE, MapPanel.Parameter.WEIRDNESS));
-        JMenuItem eOpenVoronoi_humid_alt = new JMenuItem("Humidity / Altitude");
-        eOpenVoronoi_humid_alt.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.HUMIDITY, MapPanel.Parameter.ALTITUDE));
-        JMenuItem eOpenVoronoi_humid_weird = new JMenuItem("Humidity / Weirdness");
-        eOpenVoronoi_humid_weird.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.HUMIDITY, MapPanel.Parameter.WEIRDNESS));
-        JMenuItem eOpenVoronoi_alt_weird = new JMenuItem("Altitude / Weirdness");
-        eOpenVoronoi_alt_weird.addActionListener(actionEvent -> mapPanel.setVoronoiParameters(MapPanel.Parameter.ALTITUDE, MapPanel.Parameter.WEIRDNESS));
+        JMenu eOpenVoronoiVertical = new JMenu("Set Voronoi Diagram Vertical");
+        JMenuItem eOpenVoronoiVertical_temp = new JMenuItem("Temperature");
+        eOpenVoronoiVertical_temp.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.TEMPERATURE));
+        JMenuItem eOpenVoronoiVertical_humid = new JMenuItem("Humidity");
+        eOpenVoronoiVertical_humid.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.HUMIDITY));
+        JMenuItem eOpenVoronoiVertical_cont = new JMenuItem("Continentalness");
+        eOpenVoronoiVertical_cont.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.CONTINENTALNESS));
+        JMenuItem eOpenVoronoiVertical_ero = new JMenuItem("Erosion");
+        eOpenVoronoiVertical_ero.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.EROSION));
+        JMenuItem eOpenVoronoiVertical_weird = new JMenuItem("Weirdness");
+        eOpenVoronoiVertical_weird.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.WEIRDNESS));
+        JMenuItem eOpenVoronoiVertical_depth = new JMenuItem("Depth");
+        eOpenVoronoiVertical_depth.addActionListener(actionEvent -> mapPanel.setFirstVoronoiParameter(MapPanel.Parameter.DEPTH));
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_temp);
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_humid);
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_cont);
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_ero);
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_weird);
+        eOpenVoronoiVertical.add(eOpenVoronoiVertical_depth);
+        contextMenu.add(eOpenVoronoiVertical);
 
-        eOpenVoronoi.add(eOpenVoronoi_temp_humid);
-        eOpenVoronoi.add(eOpenVoronoi_temp_alt);
-        eOpenVoronoi.add(eOpenVoronoi_temp_weird);
-        eOpenVoronoi.add(eOpenVoronoi_humid_alt);
-        eOpenVoronoi.add(eOpenVoronoi_humid_weird);
-        eOpenVoronoi.add(eOpenVoronoi_alt_weird);*/
-
-        contextMenu.add(eOpenVoronoi);
+        JMenu eOpenVoronoiHorizontal = new JMenu("Set Voronoi Diagram Horozontal");
+        JMenuItem eOpenVoronoiHorizontal_temp = new JMenuItem("Temperature");
+        eOpenVoronoiHorizontal_temp.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.TEMPERATURE));
+        JMenuItem eOpenVoronoiHorizontal_humid = new JMenuItem("Humidity");
+        eOpenVoronoiHorizontal_humid.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.HUMIDITY));
+        JMenuItem eOpenVoronoiHorizontal_cont = new JMenuItem("Continentalness");
+        eOpenVoronoiHorizontal_cont.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.CONTINENTALNESS));
+        JMenuItem eOpenVoronoiHorizontal_ero = new JMenuItem("Erosion");
+        eOpenVoronoiHorizontal_ero.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.EROSION));
+        JMenuItem eOpenVoronoiHorizontal_weird = new JMenuItem("Weirdness");
+        eOpenVoronoiHorizontal_weird.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.WEIRDNESS));
+        JMenuItem eOpenVoronoiHorizontal_depth = new JMenuItem("Depth");
+        eOpenVoronoiHorizontal_depth.addActionListener(actionEvent -> mapPanel.setSecondVoronoiParameter(MapPanel.Parameter.DEPTH));
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_temp);
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_humid);
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_cont);
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_ero);
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_weird);
+        eOpenVoronoiHorizontal.add(eOpenVoronoiHorizontal_depth);
+        contextMenu.add(eOpenVoronoiHorizontal);
 
         return contextMenu;
     }
 
-    private static MultiNoiseBiomeResourceSource loadJson(long seed, String path) throws OperationNotSupportedException, JSONException, FileNotFoundException {
-        String json = null;
+    private static MultiNoiseBiomeResourceSource loadJson(String path) throws OperationNotSupportedException, JSONException, FileNotFoundException, NoSuchElementException {
+        String json;
         File file = new File(path);
 
         File parent1 = file.getParentFile();
@@ -236,33 +287,33 @@ public class Main {
         }
 
         json = new Scanner(file).useDelimiter("\\Z").next();
-        return MultiNoiseBiomeResourceSource.overworld(seed);// .readJson(seed, json, worldname);
+        dimension.name = worldname;
+        dimension.fixedSeed = true;
+        return MultiNoiseJsonReader.readJson(json);
     }
 
     private static void reload(MapPanel mapPanel){
         System.out.println("Reload!");
         try {
-            MultiNoiseBiomeResourceSource biomeSource = loadJson(seed, lastPath);
-            mapPanel.biomeSource = biomeSource;
+            mapPanel.biomeSource = loadJson(lastPath);
         } catch (OperationNotSupportedException e) {
             System.out.println("ERROR: Opended dimension is not of type minecraft:multi_noise");
-            //loadVoid(mapPanel);
+            loadVoid(mapPanel);
         } catch (JSONException e) {
             System.out.println("ERROR: JSON format not correct");
             e.printStackTrace();
-            //loadVoid(mapPanel);
+            loadVoid(mapPanel);
         } catch (FileNotFoundException e) {
             System.out.println("ERROR: Failed to open file");
             e.printStackTrace();
-            //loadVoid(mapPanel);
+            loadVoid(mapPanel);
         }
 
         mapPanel.redrawImage();
     }
 
-    /*
     private static void loadVoid(MapPanel mapPanel){
-        mapPanel.biomeSource = MultiNoiseStringBiomeSource.voidSource();
-    }*/
+        mapPanel.biomeSource = new VoidBiomeResourceSource();
+    }
 }
 

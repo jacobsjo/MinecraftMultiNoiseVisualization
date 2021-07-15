@@ -23,7 +23,7 @@ public class BiomeColors {
         object = new JSONObject(json);
     }
 
-    public int getBiomeRGB(String biome_name, boolean highlight){
+    public int getBiomeRGB(String biome_name, boolean highlight, double darken){
         int red, green, blue;
         if (object.has(biome_name)) {
             JSONArray colorArray = object.getJSONArray(biome_name);
@@ -36,6 +36,10 @@ public class BiomeColors {
             green = hash >> 8 & 0xFF;
             blue = hash & 0xFF;
         }
+
+        red = Math.min(Math.max((int)(red - darken), 0x00),0xFF);
+        green = Math.min(Math.max((int)(green - darken), 0x00), 0xFF);
+        blue = Math.min(Math.max((int)(blue - darken), 0x00), 0xFF);
 
         if (highlight){
             red = Math.min((int)(red *1.2 + 50), 0xFF);
