@@ -8,6 +8,7 @@ public interface BiomeResourceSource {
     Pair<String, Climate.ParameterPoint> getNoiseBiome(int biomeX, int biomeY, int biomeZ);
     Pair<String, Climate.ParameterPoint> findBiome(Climate.TargetPoint target);
 
+    double getOffset(int param_0, int param_1, int param_2);
     double getTemperature(double param_0, double param_1, double param_2);
     double getHumidity(double param_0, double param_1, double param_2);
     double getContinentalness(double param_0, double param_1, double param_2);

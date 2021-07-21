@@ -208,10 +208,10 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     }
 
     private double calculateHillShading(BiomeResourceSource biomeSource, int biomeX, int biomeZ){
-        double offsetN = biomeSource.getOffsetAndFactor(biomeX-1, biomeZ)[0];
-        double offsetS = biomeSource.getOffsetAndFactor(biomeX+1, biomeZ)[0];
-        double offsetW = biomeSource.getOffsetAndFactor(biomeX, biomeZ-1)[0];
-        double offsetE = biomeSource.getOffsetAndFactor(biomeX, biomeZ+1)[0];
+        double offsetN = biomeSource.getOffsetAndFactor(biomeX-5, biomeZ)[0];
+        double offsetS = biomeSource.getOffsetAndFactor(biomeX+5, biomeZ)[0];
+        double offsetW = biomeSource.getOffsetAndFactor(biomeX, biomeZ-5)[0];
+        double offsetE = biomeSource.getOffsetAndFactor(biomeX, biomeZ+5)[0];
 
         double gradientNS = (offsetN - offsetS)*16;
         double gradientWE = (offsetW - offsetE)*16;
@@ -235,8 +235,11 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
             Parameter v2 = voronoi2;
             BiomeResourceSource bs = biomeSource;
             String hb = hightlightBiome;
-            int mx = mouseX;
-            int my = mouseY;
+
+            int terrainHeight = biomeSource.getTerrainHeight(mouseX, mouseY);
+            double x = (double)mouseX + biomeSource.getOffset(mouseX, 0, mouseY);
+            double y = (double)terrainHeight/4.0 + biomeSource.getOffset(terrainHeight/4, mouseY, mouseX);
+            double z = (double)mouseY + biomeSource.getOffset(mouseY, mouseX, 0);
 
             BufferedImage newVoronoiImage = new BufferedImage(vs / vds, vs /vds, BufferedImage.TYPE_INT_RGB);
             for (int p1 = 0 ; p1 < vs/vds ; p1++){
@@ -244,11 +247,11 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
                     float param1 = ((float) p1 / vs * vds * 2.0f) - 1.0f;
                     float param2 = ((float) p2 / vs * vds * 2.0f) - 1.0f;
 
-                    double temp = v1 == Parameter.TEMPERATURE ? param1 : v2 == Parameter.TEMPERATURE ? param2 : biomeSource.getTemperature(mx, 0, my);
-                    double humid = v1 == Parameter.HUMIDITY ? param1 : v2 == Parameter.HUMIDITY ? param2 : biomeSource.getHumidity(mx, 0, my);
-                    double cont = v1 == Parameter.CONTINENTALNESS ? param1 : v2 == Parameter.CONTINENTALNESS ? param2 : biomeSource.getContinentalness(mx, 0, my);
-                    double ero = v1 == Parameter.EROSION ? param1 : v2 == Parameter.EROSION ? param2 : biomeSource.getErosion(mx, 0, my);
-                    double weird = v1 == Parameter.WEIRDNESS ? param1 : v2 == Parameter.WEIRDNESS ? param2 : biomeSource.getWeirdness(mx, 0, my);
+                    double temp = v1 == Parameter.TEMPERATURE ? param1 : v2 == Parameter.TEMPERATURE ? param2 : biomeSource.getTemperature(x, y, z);
+                    double humid = v1 == Parameter.HUMIDITY ? param1 : v2 == Parameter.HUMIDITY ? param2 : biomeSource.getHumidity(x, y, z);
+                    double cont = v1 == Parameter.CONTINENTALNESS ? param1 : v2 == Parameter.CONTINENTALNESS ? param2 : biomeSource.getContinentalness(x, 0, z);
+                    double ero = v1 == Parameter.EROSION ? param1 : v2 == Parameter.EROSION ? param2 : biomeSource.getErosion(x, 0, z);
+                    double weird = v1 == Parameter.WEIRDNESS ? param1 : v2 == Parameter.WEIRDNESS ? param2 : biomeSource.getWeirdness(x, 0, z);
                     double depth = v1 == Parameter.DEPTH ? param1 : v2 == Parameter.DEPTH ? param2 : 0.0;
 
                     Climate.TargetPoint target = Climate.target((float) temp, (float) humid, (float) cont, (float) ero, (float) depth, (float) weird);
@@ -310,11 +313,15 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         g2.drawString(voronoi2.toString(), -vs+ 50, getWidth() - vs - 5);
         g2.rotate(Math.PI/2);
 
-        double temp = biomeSource.getTemperature(mouseX, terrainHeight/4.0, mouseY);
-        double humid = biomeSource.getHumidity(mouseX, terrainHeight/4.0, mouseY);
-        double cont = biomeSource.getContinentalness(mouseX, terrainHeight/4.0, mouseY);
-        double ero = biomeSource.getErosion(mouseX, terrainHeight/4.0, mouseY);
-        double weird = biomeSource.getWeirdness(mouseX, terrainHeight/4.0, mouseY);
+        double x = (double)mouseX + biomeSource.getOffset(mouseX, 0, mouseY);
+        double y = (double)terrainHeight/4.0 + biomeSource.getOffset(terrainHeight/4, mouseY, mouseX);
+        double z = (double)mouseY + biomeSource.getOffset(mouseY, mouseX, 0);
+
+        double temp = biomeSource.getTemperature(x,y,z);
+        double humid = biomeSource.getHumidity(x,y,z);
+        double cont = biomeSource.getContinentalness(x,0,z);
+        double ero = biomeSource.getErosion(x,0,z);
+        double weird = biomeSource.getWeirdness(x,0,z);
 
         double pointer1 = voronoi1 == Parameter.TEMPERATURE ? temp : voronoi1 == Parameter.HUMIDITY ? humid : voronoi1 == Parameter.CONTINENTALNESS ? cont : voronoi1 == Parameter.EROSION ? ero : voronoi1 == Parameter.WEIRDNESS ? weird : 0.0;
         double pointer2 = voronoi2 == Parameter.TEMPERATURE ? temp : voronoi2 == Parameter.HUMIDITY ? humid : voronoi2 == Parameter.CONTINENTALNESS ? cont : voronoi2 == Parameter.EROSION ? ero : voronoi2 == Parameter.WEIRDNESS ? weird : 0.0;

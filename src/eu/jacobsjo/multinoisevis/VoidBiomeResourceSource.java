@@ -45,6 +45,11 @@ public class VoidBiomeResourceSource implements BiomeResourceSource{
     }
 
     @Override
+    public double getOffset(int param_0, int param_1, int param_2) {
+        return 0;
+    }
+
+    @Override
     public double getTemperature(double param_0, double param_1, double param_2) {
         return 0;
     }
