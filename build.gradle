@@ -14,7 +14,7 @@ plugins {
 }
 
 group 'eu.jacobso.multinoisevis'
-version '0.2.0.exp1'
+version '0.2.1.exp2'
 
 repositories {
     mavenCentral()
