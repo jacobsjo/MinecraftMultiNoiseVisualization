@@ -52,10 +52,10 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
                 = builder.build().stream().map(
                         (param_1) -> Pair.of(param_1.getFirst(), (Supplier<Pair<String, Climate.ParameterPoint>>) () -> Pair.of(param_1.getSecond().location().toString(), param_1.getFirst()))
                 ).collect(ImmutableList.toImmutableList());;
-        MultiNoiseBiomeSource.NoiseParameters temperatureNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.0D, 0.0D, 1.0D, 1.0D, 0.0D);
-        MultiNoiseBiomeSource.NoiseParameters humidityNoiseParameter = new MultiNoiseBiomeSource.NoiseParameters(-7, 1.0D, 0.0D, 1.0D, 0.0D, 1.0D, 0.0D);
+        MultiNoiseBiomeSource.NoiseParameters temperatureNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.5D, 0.0D, 0.0D, 0.0D, 0.0D);
+        MultiNoiseBiomeSource.NoiseParameters humidityNoiseParameter = new MultiNoiseBiomeSource.NoiseParameters(-7, 2.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
         MultiNoiseBiomeSource.NoiseParameters continentalnessNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.0D, 2.0D, 2.0D, 2.0D, 1.0D, 1.0D, 1.0D, 1.0D);
-        MultiNoiseBiomeSource.NoiseParameters erosionNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.0D, 0.0D, 1.0D, 1.0D);
+        MultiNoiseBiomeSource.NoiseParameters erosionNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.2D, 0.0D, 1.0D, 0.0D, 0.0D);
         MultiNoiseBiomeSource.NoiseParameters weirdnessNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-7, 1.0D, 2.0D, 1.0D, 0.0D, 0.0D, 0.0D);
         return new MultiNoiseBiomeResourceSource(seed, new Climate.ParameterList<>(biomes), temperatureNoiseParameters, humidityNoiseParameter, continentalnessNoiseParameters, erosionNoiseParameters, weirdnessNoiseParameters);
     }
