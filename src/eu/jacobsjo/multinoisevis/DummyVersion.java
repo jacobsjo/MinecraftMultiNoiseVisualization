@@ -1,5 +1,6 @@
 package eu.jacobsjo.multinoisevis;
 
+import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.WorldVersion;
 import net.minecraft.world.level.storage.DataVersion;
 

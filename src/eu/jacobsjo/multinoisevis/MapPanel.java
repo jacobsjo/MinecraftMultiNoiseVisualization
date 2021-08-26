@@ -208,10 +208,10 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     }
 
     private double calculateHillShading(BiomeResourceSource biomeSource, int biomeX, int biomeZ){
-        double offsetN = biomeSource.getOffsetAndFactor(biomeX-5, biomeZ)[0];
-        double offsetS = biomeSource.getOffsetAndFactor(biomeX+5, biomeZ)[0];
-        double offsetW = biomeSource.getOffsetAndFactor(biomeX, biomeZ-5)[0];
-        double offsetE = biomeSource.getOffsetAndFactor(biomeX, biomeZ+5)[0];
+        double offsetN = biomeSource.getTerrainHeight(biomeX-5, biomeZ)/128.0;
+        double offsetS = biomeSource.getTerrainHeight(biomeX+5, biomeZ)/128.0;
+        double offsetW = biomeSource.getTerrainHeight(biomeX, biomeZ-5)/128.0;
+        double offsetE = biomeSource.getTerrainHeight(biomeX, biomeZ+5)/128.0;
 
         double gradientNS = (offsetN - offsetS)*16;
         double gradientWE = (offsetW - offsetE)*16;
@@ -255,11 +255,8 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
                     double depth = v1 == Parameter.DEPTH ? param1 : v2 == Parameter.DEPTH ? param2 : 0.0;
 
                     Climate.TargetPoint target = Climate.target((float) temp, (float) humid, (float) cont, (float) ero, (float) depth, (float) weird);
-                    double[] offsetAndFactor = bs.findOffsetAndFactor(target);
-                    double darken = 1.0 - offsetAndFactor[0]*1;
-
                     String biome = bs.findBiome(target).getFirst();
-                    int color = biomeColors.getBiomeRGB(biome, (biome.equals(hb) && (((p1 * vds) + (p2 * vds)) >> 2 & 4) == 0), darken);
+                    int color = biomeColors.getBiomeRGB(biome, (biome.equals(hb) && (((p1 * vds) + (p2 * vds)) >> 2 & 4) == 0), 1.0);
                     newVoronoiImage.setRGB(p1, p2, color);
                 }
             }
@@ -284,6 +281,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         Graphics2D g2 = (Graphics2D) g.create();
 
         int terrainHeight = biomeSource.getTerrainHeight(mouseX, mouseY);
+        BiomeResourceSource.TerrainShape terrainShape = biomeSource.getTerrainShape(mouseX, mouseY);
 
         Pair<String, Climate.ParameterPoint> biomeAndParams = biomeSource.getNoiseBiome(mouseX, terrainHeight/4, mouseY);
         String biome = biomeAndParams.getFirst();
@@ -338,7 +336,7 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         }
 
         g2.setColor(new Color(0.2f, 0.2f,0.2f,0.5f));
-        g2.fillRect(0,0, 360,145);
+        g2.fillRect(0,0, 360,190);
         g2.fillRect(0,getHeight()-45, (int) Math.max((scaleLingLenght / scaling) + 25, 115) ,45);
 
 
@@ -353,6 +351,10 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         g2.drawString(String.format("Weirdness:       %13s / % .2f", biomeParams.weirdness(), weird), 5, 105);
         g2.drawString(String.format("Depth:           %13s /  0.00", biomeParams.depth()), 5, 120);
         g2.drawString(String.format("Offset:                % .4f /  0.00", biomeParams.offset()), 5, 135);
+        g2.drawString(String.format("T-Offset: % .2f | Factor: % .2f", terrainShape.offset, terrainShape.factor), 5, 165);
+        g2.drawString(String.format("Peak:     % .2f | Costal:  %b", terrainShape.peaks, terrainShape.coastal), 5, 180);
+
+
 
 
         g2.drawString("" + (scaleLingLenght * 4) + " Blocks", 12, getHeight()-26);

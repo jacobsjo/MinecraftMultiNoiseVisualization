@@ -80,13 +80,13 @@ public class VoidBiomeResourceSource implements BiomeResourceSource{
     }
 
     @Override
-    public double[] getOffsetAndFactor(int biomeX, int biomeZ) {
-        return new double[]{0.0, 0.0};
+    public TerrainShape getTerrainShape(int biomeX, int biomeZ) {
+        return new TerrainShape(0, 1, false, 0);
     }
 
     @Override
-    public double[] findOffsetAndFactor(Climate.TargetPoint target) {
-        return new double[]{0.0, 0.0};
+    public TerrainShape findTerrainShape(Climate.TargetPoint target, boolean isCostal) {
+        return new TerrainShape(0, 1, false, 0);
     }
 
     @Override

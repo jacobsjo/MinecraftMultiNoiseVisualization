@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList.Builder;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.*;
+import net.minecraft.world.level.biome.BiomeSource.TerrainShape;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.synth.NormalNoise;
 
@@ -17,6 +18,7 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
     private final NormalNoise erosionNoise;
     private final NormalNoise weirdnessNoise;
     private final NormalNoise offsetNoise;
+    private final NormalNoise mountainPeakNoise;
 
     private final MultiNoiseBiomeSource.NoiseParameters temperatureNoiseParameters;
     private final MultiNoiseBiomeSource.NoiseParameters humidityNoiseParameters;
@@ -42,6 +44,7 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
         this.erosionNoise = NormalNoise.create(new WorldgenRandom(seed + 3L), erosionNoiseParameters.firstOctave(), erosionNoiseParameters.amplitudes());
         this.weirdnessNoise = NormalNoise.create(new WorldgenRandom(seed + 4L), weirdnessNoiseParameters.firstOctave(), weirdnessNoiseParameters.amplitudes());
         this.offsetNoise = NormalNoise.create(new WorldgenRandom(seed + 5L), -3, 1.0D, 1.0D, 1.0D, 0.0D);
+        this.mountainPeakNoise = NormalNoise.create(new WorldgenRandom(42L), -16, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D, 1.0D);
         this.parameters = biomes;
     }
 
@@ -52,10 +55,10 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
                 = builder.build().stream().map(
                         (param_1) -> Pair.of(param_1.getFirst(), (Supplier<Pair<String, Climate.ParameterPoint>>) () -> Pair.of(param_1.getSecond().location().toString(), param_1.getFirst()))
                 ).collect(ImmutableList.toImmutableList());;
-        MultiNoiseBiomeSource.NoiseParameters temperatureNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.5D, 0.0D, 0.0D, 0.0D, 0.0D);
-        MultiNoiseBiomeSource.NoiseParameters humidityNoiseParameter = new MultiNoiseBiomeSource.NoiseParameters(-7, 2.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+        MultiNoiseBiomeSource.NoiseParameters temperatureNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.5D, 0.0D, 1.0D, 0.0D, 0.0D, 0.0D);
+        MultiNoiseBiomeSource.NoiseParameters humidityNoiseParameter = new MultiNoiseBiomeSource.NoiseParameters(-7, 1.0D, 1.0D, 0.0D, 0.0D, 0.0D, 0.0D);
         MultiNoiseBiomeSource.NoiseParameters continentalnessNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.0D, 2.0D, 2.0D, 2.0D, 1.0D, 1.0D, 1.0D, 1.0D);
-        MultiNoiseBiomeSource.NoiseParameters erosionNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.2D, 0.0D, 1.0D, 0.0D, 0.0D);
+        MultiNoiseBiomeSource.NoiseParameters erosionNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-9, 1.0D, 1.0D, 0.0D, 1.0D, 1.0D);
         MultiNoiseBiomeSource.NoiseParameters weirdnessNoiseParameters = new MultiNoiseBiomeSource.NoiseParameters(-7, 1.0D, 2.0D, 1.0D, 0.0D, 0.0D, 0.0D);
         return new MultiNoiseBiomeResourceSource(seed, new Climate.ParameterList<>(biomes), temperatureNoiseParameters, humidityNoiseParameter, continentalnessNoiseParameters, erosionNoiseParameters, weirdnessNoiseParameters);
     }
@@ -80,8 +83,11 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
     }
 
     public int getTerrainHeight(int biomeX, int biomeZ) {
-        double[] offsetAndFactor = getOffsetAndFactor(biomeX, biomeZ);
-        return (int) (64 + offsetAndFactor[0] * 128);
+        TerrainShape shape = getTerrainShape(biomeX, biomeZ);
+        double scaling = 3000.0F / 4.0F; // TODO: divided by noise size_horizontal = 1
+        double peak = mountainPeakNoise.getValue(scaling * biomeX, 0.0D, scaling * biomeZ);
+        double peakValue = peak > 0.0D ? shape.peaks * peak : shape.peaks / 2.0D * peak;
+        return (int) (64 + (shape.offset + peakValue) * 128);
     }
 
     public Pair<String, Climate.ParameterPoint> getSurfaceNoiseBiome(int biomeX, int biomeZ) {
@@ -141,19 +147,20 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
         return this.weirdnessNoise.getValue(param_0, param_1, param_2);
     }
 
-    public double[] getOffsetAndFactor(int biomeX, int biomeZ) {
-        double var_0 = (double)biomeX + this.getOffset(biomeX, 0, biomeZ);
-        double var_1 = (double)biomeZ + this.getOffset(biomeZ, biomeX, 0);
-        float var_2 = (float)this.getContinentalness(var_0, 0.0D, var_1);
-        float var_3 = (float)this.getWeirdness(var_0, 0.0D, var_1);
-        float var_4 = (float)this.getErosion(var_0, 0.0D, var_1);
-        TerrainShaper.Point var_5 = this.shaper.makePoint(var_2, var_4, var_3);
-        return new double[]{(double)this.shaper.offset(var_5), (double)this.shaper.factor(var_5)};
+    public TerrainShape getTerrainShape(int x, int z) {
+        double x_offset = (double)x + this.getOffset(x, 0, z);
+        double z_offset = (double)z + this.getOffset(z, x, 0);
+        float continentalness = (float)this.getContinentalness(x_offset, 0.0D, z_offset);
+        float weirdness = (float)this.getWeirdness(x_offset, 0.0D, z_offset);
+        float erosion = (float)this.getErosion(x_offset, 0.0D, z_offset);
+        TerrainShaper.Point targetPoint = this.shaper.makePoint(continentalness, erosion, weirdness);
+        boolean var_6 = TerrainShaper.isCoastal(continentalness, weirdness);
+        return new TerrainShape((double)this.shaper.offset(targetPoint), (double)this.shaper.factor(targetPoint), var_6, this.shaper.peaks(targetPoint));
     }
 
-    public double[] findOffsetAndFactor(Climate.TargetPoint target) {
+    public TerrainShape findTerrainShape(Climate.TargetPoint target, boolean isCostal) {
         TerrainShaper.Point var_5 = this.shaper.makePoint(target.continentalness(), target.erosion(), target.weirdness());
-        return new double[]{(double)this.shaper.offset(var_5), (double)this.shaper.factor(var_5)};
+        return new TerrainShape((double)this.shaper.offset(var_5), (double)this.shaper.factor(var_5), isCostal, this.shaper.peaks(var_5));
     }
 
 

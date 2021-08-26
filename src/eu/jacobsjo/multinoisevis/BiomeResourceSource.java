@@ -16,8 +16,23 @@ public interface BiomeResourceSource {
     double getWeirdness(double param_0, double param_1, double param_2);
 
     BiomeResourceSource withSeed(long seed);
-    double[] getOffsetAndFactor(int biomeX, int biomeZ);
-    double[] findOffsetAndFactor(Climate.TargetPoint target);
+    TerrainShape getTerrainShape(int biomeX, int biomeZ);
+    TerrainShape findTerrainShape(Climate.TargetPoint target, boolean isCostal);
 
     int getTerrainHeight(int biomeX, int biomeZ);
+
+    class TerrainShape {
+        public final double offset;
+        public final double factor;
+        public final boolean coastal;
+        public final float peaks;
+
+        TerrainShape(double offset, double factor, boolean costal, float peaks) {
+            this.offset = offset;
+            this.factor = factor;
+            this.coastal = costal;
+            this.peaks = peaks;
+        }
+    }
+
 }
