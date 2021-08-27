@@ -87,7 +87,7 @@ public class MultiNoiseBiomeResourceSource implements BiomeResourceSource {
         double scaling = 3000.0F / 4.0F; // TODO: divided by noise size_horizontal = 1
         double peak = mountainPeakNoise.getValue(scaling * biomeX, 0.0D, scaling * biomeZ);
         double peakValue = peak > 0.0D ? shape.peaks * peak : shape.peaks / 2.0D * peak;
-        return (int) (64 + (shape.offset + peakValue) * 128);
+        return (int) (64 + shape.offset * 128 + peakValue);
     }
 
     public Pair<String, Climate.ParameterPoint> getSurfaceNoiseBiome(int biomeX, int biomeZ) {
