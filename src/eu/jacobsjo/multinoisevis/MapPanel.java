@@ -6,6 +6,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -63,8 +68,10 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
     public MapPanel(MultiNoiseStringBiomeSource biomeSource, BiomeColors biomeColors){
 
         timer = new Timer(500, actionEvent -> {
-            downsample = stationaryDownsample;
-            redrawImage();
+            if (downsample > stationaryDownsample) {
+                downsample = stationaryDownsample;
+                redrawImage();
+            }
         });
 
         timer.start();
@@ -128,10 +135,46 @@ public class MapPanel extends JPanel implements MouseMotionListener, MouseListen
         this.hightlightBiome = hightlightBiome;
     }
 
+    public void setFullResolution(){
+        downsample = 1;
+    }
+
     public void setVoronoiParameters(Parameter parameter1, Parameter parameter2){
         this.voronoi1 = parameter1;
         this.voronoi2 = parameter2;
         redrawVoronoi();
+    }
+
+    public void exportStatistics(Writer writer) throws IOException {
+        HashMap<String, Integer> map = new HashMap<>();
+
+        int totalCount = 0;
+
+        for (int x = 0 ; x<getWidth() ; x++){
+            for (int z = 0; z<getHeight() ; z++) {
+                String biome = biomeSource.getBiome(
+                    (int) (x * scaling) + (int) offsetX,
+                    0,
+                    (int) (z * scaling) + (int) offsetZ
+                );
+
+                if (map.containsKey(biome)){
+                    map.put(biome, map.get(biome)+1);
+                } else {
+                    map.put(biome, 1);
+                }
+
+                totalCount++;
+            }
+        }
+
+        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+            String biome = entry.getKey();
+            int count = entry.getValue();
+            double percentage = ((double) count) / ((double) totalCount) * 100.0;
+
+            writer.write(String.format("%s: %.2f%%\n", biome, percentage));
+        }
     }
 
     public void redrawImage(){

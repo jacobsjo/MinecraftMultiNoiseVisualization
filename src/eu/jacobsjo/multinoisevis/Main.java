@@ -14,6 +14,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -184,6 +185,31 @@ public class Main {
             mapPanel.redrawImage();
         });
         contextMenu.add(eHighlightBiome);
+
+        JMenuItem eFullResolution = new JMenuItem("Render Full Resolution Image");
+        eFullResolution.addActionListener(actionEvent -> {
+            mapPanel.setFullResolution();
+            mapPanel.redrawImage();;
+        });
+        contextMenu.add(eFullResolution);
+
+        JMenuItem eGenStatistics = new JMenuItem("Generate Biome Statistics");
+        eGenStatistics.addActionListener(actionEvent -> {
+            JFileChooser fileChooser = new JFileChooser(lastPath);
+            FileNameExtensionFilter filter = new FileNameExtensionFilter("TXT files", "txt");
+            fileChooser.setFileFilter(filter);
+            int returnVal = fileChooser.showSaveDialog(frame);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                try {
+                    FileWriter writer = new FileWriter(fileChooser.getSelectedFile());
+                    mapPanel.exportStatistics(writer);
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        contextMenu.add(eGenStatistics);
 
         JMenu eOpenVoronoi = new JMenu("Set Voronoi Diagram");
 
