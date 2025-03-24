@@ -1,3 +1,5 @@
+## THIS PROGRAM ONLY WORKS FOR version 1.16 and 1.17. FOR NEWER VERSIONS, SEE https://github.com/jacobsjo/mc-datapack-map/
+
 Minecraft Multi-Noise Visualization
 ===================================
 
